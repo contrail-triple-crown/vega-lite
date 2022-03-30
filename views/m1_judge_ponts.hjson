@@ -1,0 +1,233 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "",
+  "data": {
+    "url": "../data/m1_points.json"
+  },
+  "transform": [
+    {
+      "flatten": [
+        "judge"
+      ],
+      "as": [
+        "_judge"
+      ]
+    },
+    {
+      "flatten": [
+        "_judge.scoring"
+      ],
+      "as": [
+        "_scoring"
+      ]
+    },
+    {
+      "fold": [
+        "_scoring.conbi_name"
+      ]
+    }
+  ],
+  "facet": {
+    "row": {
+      "field": "no",
+      "header": {
+        "labelAngle": 0,
+        "labelExpr": "'第' + datum.value + '回大会'",
+        "labelFontSize": 30,
+        "labelPadding": 0,
+        "labelAlign": "center"
+      }
+    }
+  },
+  "spec": {
+    "hconcat": [
+      {
+        "encoding": {
+          "x": {
+            "field": "_judge.judge_name",
+            "type": "nominal",
+            "title": null,
+            "axis": {
+              "labelFontSize": 12,
+              "labelAngle": 0,
+              "ticks": false,
+              "labelBaseline": "line-top"
+            }
+          },
+          "y": {
+            "field": "_scoring.conbi_name",
+            "type": "nominal",
+            "title": null,
+            "axis": {
+              "labelFontSize": 15,
+              "labelPadding": 10
+            }
+          }
+        },
+        "width": 350,
+        "height": 350,
+        "layer": [
+          {
+            "mark": {
+              "type": "rect"
+            },
+            "encoding": {
+              "color": {
+                "condition": [
+                  {
+                    "test": "datum._scoring.score < 90",
+                    "value": "white"
+                  },
+                  {
+                    "test": "datum._scoring.score >= 90 && datum._scoring.score < 94",
+                    "value": "#f0e68c"
+                  },
+                  {
+                    "test": "datum._scoring.score >= 94 && datum._scoring.score < 97",
+                    "value": "#1e90ff"
+                  },
+                  {
+                    "test": "datum._scoring.score >= 97 && datum._scoring.score <= 100",
+                    "value": "#00ff7f"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "mark": {
+              "type": "text",
+              "fontSize": {
+                "expr": "datum._scoring.score >= 90 ? 16 : 12"
+              }
+            },
+            "encoding": {
+              "text": {
+                "field": "_scoring.score"
+              },
+              "color": {
+                "condition": [
+                  {
+                    "test": "datum._scoring.score >= 90",
+                    "value": "#800000"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "layer": [
+          {
+            "title": "審査員別最 高得点と中央値",
+            "mark": {
+              "type": "line",
+              "point": true,
+              "color": "#f986f8"
+            },
+            "encoding": {
+              "x": {
+                "field": "_judge.judge_name",
+                "title": null
+              },
+              "y": {
+                "field": "_scoring.score",
+                "aggregate": "median",
+                "title": null,
+                "scale": {
+                  "domain": [
+                    60,
+                    100
+                  ]
+                }
+              },
+              "y2": {
+                "field": "_scoring.score",
+                "aggregate": "max"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "transform": [
+          {
+            "joinaggregate": [
+              {
+                "op": "max",
+                "field": "_scoring.score",
+                "as": "max_score"
+              },
+              {
+                "op": "median",
+                "field": "_scoring.score",
+                "as": "median_score"
+              }
+            ],
+            "groupby": [
+              "_judge.judge_name"
+            ]
+          }
+        ],
+        "facet": {
+          "row": {
+            "field": "_judge.judge_name",
+            "header": {
+              "labelAngle": 0,
+              "labelFontSize": 20,
+              "labelPadding": 0
+            }
+          }
+        },
+        "spec": {
+          "layer": [
+            {
+              "mark": {
+                "type": "text",
+                "fontSize": 20
+              },
+              "encoding": {
+                "text": {
+                  "field": "max_score"
+                }
+              }
+            },
+            {
+              "mark": {
+                "type": "text",
+                "fontSize": 20,
+                "xOffset": 60
+              },
+              "encoding": {
+                "text": {
+                  "field": "median_score"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "config": {
+    "rect": {
+      "stroke": "black",
+      "strokeWidth": 2
+    },
+    "facet": {
+      "spacing": 30
+    },
+    "style": {
+      "cell": {
+        "stroke": "teal"
+      }
+    }
+  },
+  "resolve": {
+    "scale": {
+      "y": "independent",
+      "x": "independent"
+    }
+  }
+}
