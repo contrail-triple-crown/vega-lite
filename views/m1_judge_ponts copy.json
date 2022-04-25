@@ -1,0 +1,107 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "",
+  "data": {
+    "url": "../data/m1_points.json"
+  },
+  "params": [
+    {
+      "name": "select_no",
+      "value": 1,
+      "bind": {
+        "input": "select",
+        "options": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      }
+    }
+  ],
+  "transform": [
+    {
+      "filter": "datum.no"
+    },
+    {
+      "flatten": [
+        "judge"
+      ],
+      "as": [
+        "_judge"
+      ]
+    },
+    {
+      "flatten": [
+        "_judge.scoring"
+      ],
+      "as": [
+        "_scoring"
+      ]
+    },
+    {
+      "fold": [
+        "_scoring.conbi_name"
+      ]
+    },
+    {
+      "calculate": "datum._judge.judge_name",
+      "as": "j_name"
+    },
+    {
+      "filter": "toNumber(datum.no) >= toNumber(select_no) - 1"
+    },
+    {
+      "filter": "toNumber(datum.no) <= toNumber(select_no) + 1"
+    },
+    {
+      "aggregate": [
+        {
+          "op": "mean",
+          "field": "_scoring.score",
+          "as": "score"
+        }
+      ],
+      "groupby": [
+        "year",
+        "_judge.judge_name"
+      ]
+    }
+  ],
+  "width": 350,
+  "height": 150,
+  "mark": "line",
+  "encoding": {
+    "x": {
+      "field": "year",
+      "type": "temporal"
+    },
+    "y": {
+      "field": "score",
+      "type": "quantitative",
+      "scale": {
+        "domain": [
+          0,
+          100
+        ]
+      },
+      "title": null
+    }
+  }
+}
