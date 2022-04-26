@@ -33,12 +33,21 @@
           20
         ]
       }
+    },
+    {
+      "name": "select_agg",
+      "value": "mean",
+      "bind": {
+        "input": "select",
+        "options": [
+          "max",
+          "mean",
+          "min"
+        ]
+      }
     }
   ],
   "transform": [
-    {
-      "filter": "datum.no"
-    },
     {
       "flatten": [
         "judge"
@@ -63,45 +72,235 @@
     {
       "calculate": "datum._judge.judge_name",
       "as": "j_name"
+    }
+  ],
+  "vconcat": [
+    {
+      "facet": {
+        "row": {
+          "field": "no",
+          "header": {
+            "labelAngle": 0,
+            "labelExpr": "'第' + datum.value + '回大会'",
+            "labelFontSize": 30,
+            "labelPadding": 0,
+            "labelAlign": "center",
+            "title": null
+          }
+        }
+      },
+      "spec": {
+        "transform": [
+          {
+            "filter": "toNumber(datum.no) == toNumber(select_no)"
+          }
+        ],
+        "encoding": {
+          "x": {
+            "field": "j_name",
+            "type": "nominal",
+            "title": null,
+            "axis": {
+              "labelFontSize": 12,
+              "labelAngle": 0,
+              "ticks": false,
+              "labelBaseline": "line-top"
+            }
+          },
+          "y": {
+            "field": "_scoring.conbi_name",
+            "type": "nominal",
+            "title": null,
+            "axis": {
+              "labelFontSize": 15,
+              "labelPadding": 10
+            }
+          }
+        },
+        "width": 300,
+        "height": 300,
+        "layer": [
+          {
+            "params": [
+              {
+                "name": "selected_judge_name",
+                "value": "松本",
+                "select": {
+                  "type": "point",
+                  "encodings": [
+                    "x"
+                  ],
+                  "resolve": "global"
+                }
+              }
+            ],
+            "mark": {
+              "type": "rect"
+            },
+            "encoding": {
+              "color": {
+                "condition": [
+                  {
+                    "test": "datum._scoring.score < 90",
+                    "value": "white"
+                  },
+                  {
+                    "test": "datum._scoring.score >= 90 && datum._scoring.score < 94",
+                    "value": "#f0e68c"
+                  },
+                  {
+                    "test": "datum._scoring.score >= 94 && datum._scoring.score < 97",
+                    "value": "#1e90ff"
+                  },
+                  {
+                    "test": "datum._scoring.score >= 97 && datum._scoring.score <= 100",
+                    "value": "#00ff7f"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "mark": {
+              "type": "text",
+              "fontSize": {
+                "expr": "datum._scoring.score >= 90 ? 16 : 12"
+              }
+            },
+            "encoding": {
+              "text": {
+                "field": "_scoring.score"
+              },
+              "color": {
+                "condition": [
+                  {
+                    "test": "datum._scoring.score >= 90",
+                    "value": "#800000"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "resolve": {
+        "scale": {
+          "y": "independent",
+          "x": "independent"
+        }
+      }
     },
     {
-      "filter": "toNumber(datum.no) >= toNumber(select_no) - 1"
-    },
-    {
-      "filter": "toNumber(datum.no) <= toNumber(select_no) + 1"
-    },
-    {
-      "aggregate": [
+      "transform": [
         {
-          "op": "mean",
-          "field": "_scoring.score",
-          "as": "score"
+          "filter": "datum._judge.judge_name == selected_judge_name.j_name"
+        },
+        {
+          "aggregate": [
+            {
+              "op": "mean",
+              "field": "_scoring.score",
+              "as": "mean_score"
+            },
+            {
+              "op": "max",
+              "field": "_scoring.score",
+              "as": "max_score"
+            },
+            {
+              "op": "min",
+              "field": "_scoring.score",
+              "as": "min_score"
+            }
+          ],
+          "groupby": [
+            "year"
+          ]
         }
       ],
-      "groupby": [
-        "year",
-        "_judge.judge_name"
+      "vconcat": [
+        {
+          "transform": [
+            {
+              "calculate": "selected_judge_name.j_name + ' 得点推移 (' + select_agg + ')'",
+              "as": "_title"
+            },
+            {
+              "calculate": "select_agg == 'mean' ? datum.mean_score : select_agg == 'max' ? datum.max_score : datum.min_score",
+              "as": "_score"
+            }
+          ],
+          "mark": {
+            "type": "text",
+            "size": 15
+          },
+          "encoding": {
+            "text": {
+              "field": "_title"
+            }
+          }
+        },
+        {
+          "transform": [
+            {
+              "calculate": "select_agg == 'mean' ? datum.mean_score : select_agg == 'max' ? datum.max_score : datum.min_score",
+              "as": "_score"
+            }
+          ],
+          "width": 400,
+          "height": 100,
+          "mark": {
+            "type": "line",
+            "point": true
+          },
+          "encoding": {
+            "x": {
+              "field": "year",
+              "type": "nominal",
+              "title": null,
+              "axis": {
+                "labelAngle": 45,
+                "labelExpr": "datum.value + '年'",
+                "labelFontSize": 7,
+                "labelFontWeight": "bold",
+                "labelBaseline": "top",
+                "labelBound": true,
+                "labelOffset": -5,
+                "labelPadding": -20
+              }
+            },
+            "y": {
+              "field": "_score",
+              "type": "quantitative",
+              "scale": {
+                "domain": [
+                  40,
+                  100
+                ]
+              },
+              "title": null
+            }
+          }
+        }
       ]
     }
   ],
-  "width": 350,
-  "height": 150,
-  "mark": "line",
-  "encoding": {
-    "x": {
-      "field": "year",
-      "type": "temporal"
+  "config": {
+    "rect": {
+      "stroke": "black",
+      "strokeWidth": 2
     },
-    "y": {
-      "field": "score",
-      "type": "quantitative",
-      "scale": {
-        "domain": [
-          0,
-          100
-        ]
-      },
-      "title": null
+    "facet": {
+      "spacing": 30
+    },
+    "style": {
+      "cell": {
+        "stroke": "teal"
+      }
+    },
+    "concat": {
+      "spacing": 30,
+      "columns": 30
     }
   }
 }
